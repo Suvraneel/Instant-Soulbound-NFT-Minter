@@ -12,7 +12,7 @@ import Address from "../Address/Address";
 import Blockie from "../Blockie";
 
 import ABI from "../../contracts/ABI.json";
-const smartContractAddress = "0x23b8bf53cb0dc8607b9b79f28cd5c1b5d7834cf2";
+const smartContractAddress = "0xEfEfc9b2B2790e30c277A4D1A2892d6142287e18";
 
 const styles = {
   title: {
@@ -63,6 +63,7 @@ function CreateNFT() {
   const [nftName, setNftName] = useState("");
   const [nftDescription, setNftDescription] = useState("");
   const [isPending, setIsPending] = useState(0);
+  const [nftReceiver, setNftReceiver] = useState("");
   // const [nftImage, setNftImage] = useState("");
 
   async function create() {
@@ -92,10 +93,11 @@ function CreateNFT() {
     setIsPending(2);
     const options = {
       contractAddress: smartContractAddress,
-      functionName: "createToken",
+      functionName: "safeMint",
       abi: ABI,
       params: {
-        tokenURI: metadataHash,
+        to: nftReceiver,
+        uri: metadataHash,
       },
     };
     await contractProcessor.fetch({
@@ -107,6 +109,7 @@ function CreateNFT() {
     setNftName("");
     setNftDescription("");
     document.getElementById("nftImage").value = null;
+    setNftReceiver("");
     // const nft = await createNFT(metadataHash).then((res) => {
     //   console.log(res);
     //   return res;
@@ -149,6 +152,19 @@ function CreateNFT() {
             placeholder="NFT Description"
             value={nftDescription}
             onChange={(e) => setNftDescription(e.target.value)}
+          />
+        </div>
+        <div style={styles.select}>
+          <div style={styles.textWrapper}>
+            <Text strong>NFT Receiver</Text>
+          </div>
+          <Input
+            size="large"
+            // prefix={<CreditCardOutlined />}
+            type="text"
+            placeholder="NFT Receiver"
+            value={nftReceiver}
+            onChange={(e) => setNftReceiver(e.target.value)}
           />
         </div>
         <div style={styles.select}>

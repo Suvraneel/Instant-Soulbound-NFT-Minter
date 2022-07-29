@@ -1,26 +1,71 @@
 // SPDX-License-Identifier: MIT
-// Deployed on Celo Alfajores Testnet: 0x9Cc7E7ea69DA9c905D86e181a8bDbf9C1e90c558
-// Deployed on Polygon Mumbai Testnet: 0x23b8bf53cb0dc8607b9b79f28cd5c1b5d7834cf2
-pragma solidity ^0.8.1;
+pragma solidity ^0.8.4;
+// deployed on Polygon Testnet: 0xEfEfc9b2B2790e30c277A4D1A2892d6142287e18
+import "@openzeppelin/contracts@4.7.2/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts@4.7.2/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts@4.7.2/access/Ownable.sol";
+import "@openzeppelin/contracts@4.7.2/utils/Counters.sol";
 
-import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Counters.sol";
-import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/ERC721.sol";
+contract Soulbound is ERC721, ERC721URIStorage, Ownable {
+  using Counters for Counters.Counter;
 
+  Counters.Counter private _tokenIdCounter;
+  event Attest(address indexed to, uint256 indexed tokenId);
+  event Revoke(address indexed to, uint256 indexed tokenId);
 
-contract NFT is ERC721URIStorage {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
+  constructor() ERC721("Soulbound", "SLB") {}
 
+  function safeMint(address to, string memory uri) public {
+    uint256 tokenId = _tokenIdCounter.current();
+    _tokenIdCounter.increment();
+    _safeMint(to, tokenId);
+    _setTokenURI(tokenId, uri);
+  }
 
-    constructor() ERC721("NonFungibleTalent", "NFT") {}
+  function burn(uint256 tokenId) external {
+    require(ownerOf(tokenId) == msg.sender, "Only token owner can burn it!");
+    _burn(tokenId);
+  }
 
-    function createToken(string memory tokenURI) public returns (uint) {
-        _tokenIds.increment();
-        uint256 newItemId = _tokenIds.current();
+  function revoke(uint256 tokenId) external {
+    _burn(tokenId);
+  }
 
-        _mint(msg.sender, newItemId);
-        _setTokenURI(newItemId, tokenURI);
-        return newItemId;
+  function _beforeTokenTransfer(
+    address from,
+    address to,
+    uint256 tokenId
+  ) internal virtual override {
+    require(
+      from == address(0) || to == address(0),
+      "You can't transfer this token."
+    );
+  }
+
+  function _afterTokenTransfer(
+    address from,
+    address to,
+    uint256 tokenId
+  ) internal virtual override {
+    if (from == address(0)) {
+      emit Attest(to, tokenId);
+    } else if (to == address(0)) {
+      emit Revoke(to, tokenId);
     }
+  }
+
+  // The following functions are overrides required by Solidity.
+
+  function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
+    super._burn(tokenId);
+  }
+
+  function tokenURI(uint256 tokenId)
+    public
+    view
+    override(ERC721, ERC721URIStorage)
+    returns (string memory)
+  {
+    return super.tokenURI(tokenId);
+  }
 }
